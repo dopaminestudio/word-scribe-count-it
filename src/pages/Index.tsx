@@ -1,10 +1,10 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Copy, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { trackTextInput, trackCopy, trackReset } from '@/utils/analytics';
 
 const Index = () => {
   const [text, setText] = useState('');
@@ -15,9 +15,21 @@ const Index = () => {
   const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
   const lines = text === '' ? 0 : text.split('\n').length;
 
+  // Analytics tracking for text input
+  useEffect(() => {
+    if (text.length > 0) {
+      const timeoutId = setTimeout(() => {
+        trackTextInput(text.length);
+      }, 1000); // 1초 후에 추적 (너무 자주 호출되지 않도록)
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [text]);
+
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(text);
+      trackCopy();
       toast({
         title: "복사 완료",
         description: "텍스트가 클립보드에 복사되었습니다.",
@@ -33,6 +45,7 @@ const Index = () => {
 
   const handleReset = useCallback(() => {
     setText('');
+    trackReset();
     toast({
       title: "초기화 완료",
       description: "입력 내용이 모두 삭제되었습니다.",
